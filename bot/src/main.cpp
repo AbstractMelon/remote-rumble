@@ -19,6 +19,7 @@ const uint32_t CONTROL_TIMEOUT_MS = 350;
 const float STEERING_DEADBAND = 0.06f;
 const float THROTTLE_DEADBAND = 0.06f;
 const uint32_t ESC_ARM_DURATION_MS = 1500;
+const uint32_t CONNECTION_LED_BLINK_MS = 500;
 
 const char *WIFI_SSID = RR_WIFI_SSID;
 const char *WIFI_PASSWORD = RR_WIFI_PASSWORD;
@@ -42,6 +43,16 @@ bool failsafeNeutralApplied = false;
 bool escArmMode = false;
 uint32_t escArmUntilMs = 0;
 bool armButtonWasPressed = false;
+
+void updateConnectionLed() {
+  if (wsClient.isConnected()) {
+    ledState = true;
+  } else {
+    ledState = ((millis() / CONNECTION_LED_BLINK_MS) % 2) == 0;
+  }
+
+  digitalWrite(LED_PIN, ledState ? HIGH : LOW);
+}
 
 float clampUnit(float value) {
   if (value > 1.0f) {
@@ -196,7 +207,6 @@ void applyControl(const JsonDocument &document) {
   lastLeftY = axes["leftY"] | 0.0f;
   throttleCmd = applyDeadband(clampUnit(-lastLeftY), THROTTLE_DEADBAND);
   steeringCmd = applyDeadband(clampUnit(lastLeftX), STEERING_DEADBAND);
-  ledState = buttons["a"] | false;
 
   if (armButtonPressed && !armButtonWasPressed) {
     enterEscArmMode("controller START button");
@@ -206,7 +216,7 @@ void applyControl(const JsonDocument &document) {
   lastControlMs = millis();
   failsafeNeutralApplied = false;
 
-  digitalWrite(LED_PIN, ledState ? HIGH : LOW);
+  updateConnectionLed();
   if (escArmMode) {
     stopDrive();
   } else {
@@ -256,9 +266,11 @@ void onWebSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
   switch (type) {
     case WStype_DISCONNECTED:
       Serial.println("WebSocket disconnected.");
+      updateConnectionLed();
       break;
     case WStype_CONNECTED:
       Serial.printf("WebSocket connected: %s\n", payload);
+      updateConnectionLed();
       break;
     case WStype_TEXT: {
       StaticJsonDocument<384> doc;
@@ -295,11 +307,13 @@ void setup() {
   setupEscOutputs();
   checkWifi();
   connectWebSocket();
+  updateConnectionLed();
 }
 
 void loop() {
   checkWifi();
   wsClient.loop();
+  updateConnectionLed();
   updateEscArmMode();
 
   if (!escArmMode && lastControlMs != 0 && millis() - lastControlMs > CONTROL_TIMEOUT_MS && !failsafeNeutralApplied) {
