@@ -19,7 +19,7 @@ const uint32_t CONTROL_TIMEOUT_MS = 350;
 const float STEERING_DEADBAND = 0.06f;
 const float THROTTLE_DEADBAND = 0.06f;
 const uint32_t ESC_ARM_DURATION_MS = 1500;
-const uint32_t CONNECTION_LED_BLINK_MS = 500;
+const uint32_t CONNECTION_LED_BLINK_MS = 400;
 
 const char *WIFI_SSID = RR_WIFI_SSID;
 const char *WIFI_PASSWORD = RR_WIFI_PASSWORD;
