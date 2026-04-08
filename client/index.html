@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Remote Rumble Controller</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="mesh" aria-hidden="true"></div>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Remote Rumble</p>
+        <h1>Controller to Bot Test</h1>
+        <p>
+          Connect a gamepad in your browser and stream controls to an ESP32 bot using a shared bot ID.
+        </p>
+      </header>
+
+      <section class="panel" aria-label="Connection settings">
+        <h2>Connection</h2>
+        <label>
+          Relay URL
+          <input id="serverUrl" placeholder="ws://localhost:8080/ws" />
+        </label>
+        <label>
+          Bot ID
+          <input id="botId" value="test-bot" />
+        </label>
+        <div class="actions">
+          <button id="connectBtn" type="button">Connect</button>
+          <button id="disconnectBtn" type="button" disabled>Disconnect</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Live status">
+        <h2>Status</h2>
+        <div class="chips">
+          <span id="wsStatus" class="chip off">WebSocket: offline</span>
+          <span id="padStatus" class="chip off">Gamepad: waiting</span>
+          <span id="presenceStatus" class="chip muted">Bots: 0 | Controllers: 0</span>
+        </div>
+        <pre id="lastPacket">No control packet sent yet.</pre>
+      </section>
+
+      <section class="panel" aria-label="Axes and buttons">
+        <h2>Live Inputs</h2>
+        <div class="meters">
+          <div class="meter">
+            <span>leftX</span>
+            <div class="track"><i id="axis-leftX"></i></div>
+          </div>
+          <div class="meter">
+            <span>leftY</span>
+            <div class="track"><i id="axis-leftY"></i></div>
+          </div>
+          <div class="meter">
+            <span>rightX</span>
+            <div class="track"><i id="axis-rightX"></i></div>
+          </div>
+          <div class="meter">
+            <span>rightY</span>
+            <div class="track"><i id="axis-rightY"></i></div>
+          </div>
+        </div>
+        <div id="buttonGrid" class="button-grid"></div>
+      </section>
+
+      <section class="panel" aria-label="Telemetry">
+        <h2>Bot Telemetry</h2>
+        <pre id="telemetryBox">Waiting for telemetry from bot...</pre>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

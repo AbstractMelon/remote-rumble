@@ -1,0 +1,16 @@
+{
+  "name": "remote-rumble-relay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Relay server for controller to ESP32 bot data.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "nodemon": "^3.1.14",
+    "ws": "^8.18.0"
+  }
+}

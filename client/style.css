@@ -1,0 +1,245 @@
+:root {
+  --bg-0: #071719;
+  --bg-1: #0f2f33;
+  --ink: #ecf4f3;
+  --muted: #a9c1be;
+  --line: #2a4f53;
+  --ok: #24d68b;
+  --off: #f46e51;
+  --accent: #f8ba3d;
+  --card: rgba(7, 25, 27, 0.7);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 15% 10%, #1f5153 0%, transparent 45%),
+    radial-gradient(circle at 90% 20%, #5f2f17 0%, transparent 40%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  overflow-x: hidden;
+}
+
+.mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at center, black 30%, transparent 90%);
+}
+
+.shell {
+  position: relative;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.hero,
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 1rem;
+  backdrop-filter: blur(8px);
+  animation: rise 380ms ease both;
+}
+
+.hero h1 {
+  margin: 0.2rem 0 0.6rem;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  line-height: 1.1;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+label {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.7rem;
+  color: var(--muted);
+}
+
+input,
+button {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+}
+
+input {
+  background: #0f2628;
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+button {
+  background: #184548;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line);
+  background: #113033;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.chip.on {
+  border-color: rgba(36, 214, 139, 0.8);
+  color: #ccffe6;
+  background: rgba(36, 214, 139, 0.15);
+}
+
+.chip.off {
+  border-color: rgba(244, 110, 81, 0.85);
+  color: #ffd5cc;
+  background: rgba(244, 110, 81, 0.16);
+}
+
+.chip.muted {
+  color: var(--muted);
+}
+
+pre {
+  margin: 0.9rem 0 0;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: #061416;
+  border: 1px solid var(--line);
+  color: #d7e8e6;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.meters {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.meter {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.meter span {
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+}
+
+.track {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: #0d2426;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.track i {
+  display: block;
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, #ff9557, #f8ba3d);
+  transition: width 100ms linear;
+}
+
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.button-chip {
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  padding: 0.45rem 0.6rem;
+  text-align: center;
+  color: var(--muted);
+  background: #0e2628;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+}
+
+.button-chip.on {
+  color: #061817;
+  border-color: #ffb84d;
+  background: #ffb84d;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .hero {
+    grid-column: span 2;
+  }
+}
