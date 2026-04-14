@@ -36,10 +36,10 @@ Use the default Bot ID (`test-bot`) unless you changed it in firmware.
 Create a private config file from the example template:
 
 ```bash
-cp bot/include/secrets.example.h bot/include/secrets.h
+cp bot/include/Secrets.example.h bot/include/Secrets.h
 ```
 
-Then edit `bot/include/secrets.h` with your private values:
+Then edit `bot/include/Secrets.h` with your private values:
 
 - `RR_WIFI_SSID`
 - `RR_WIFI_PASSWORD`
@@ -47,7 +47,7 @@ Then edit `bot/include/secrets.h` with your private values:
 - `RR_SERVER_PORT`
 - `RR_BOT_ID` (must match browser Bot ID)
 
-`bot/include/secrets.h` is git-ignored, so your WiFi password is not committed.
+`bot/include/Secrets.h` is git-ignored, so your WiFi password is not committed.
 
 Then upload from the `bot` folder:
 
