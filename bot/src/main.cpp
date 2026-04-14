@@ -31,6 +31,7 @@ const char *BOT_ID = RR_BOT_ID;
 
 WebSocketsClient wsClient;
 uint32_t lastTelemetryMs = 0;
+int telemetryUpdateIntervalMs = 250;
 bool ledState = false;
 float lastLeftX = 0.0f;
 float lastLeftY = 0.0f;
@@ -323,7 +324,7 @@ void loop() {
   }
 
   uint32_t now = millis();
-  if (now - lastTelemetryMs >= 1000) {
+  if (now - lastTelemetryMs >= telemetryUpdateIntervalMs) {
     sendTelemetry();
     lastTelemetryMs = now;
   }
