@@ -1,0 +1,16 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3015:8080"
+    env_file: .env
+    volumes:
+      - ./data:/data
+    depends_on:
+      - mediamtx
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    network_mode: host
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml

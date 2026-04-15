@@ -43,5 +43,12 @@
 # Node.js artifacts
 node_modules/
 server/node_modules/
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+backend/web/_app/
+data/
+remote-rumble
 .env
 FLOW.md
+tmp
