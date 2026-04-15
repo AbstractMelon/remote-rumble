@@ -1,7 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { apiFetch, getAdminKey, setAdminKey, verifyAdminAccess } from '$lib/stores/session';
+  import { get } from 'svelte/store';
+  import { appSocket } from '$lib/ws';
+  import { apiFetch, getAdminKey, session, setAdminKey, verifyAdminAccess } from '$lib/stores/session';
 
   let activeFight: any = null;
   let fightHistory: any[] = [];
@@ -19,6 +21,58 @@
 
   let newBot = { id: '', name: '', description: '' };
   let statusMessage = '';
+  let refreshTimer: ReturnType<typeof setInterval> | null = null;
+  let liveRefreshUnsubs: Array<() => void> = [];
+  let refreshInFlight = false;
+  let refreshQueued = false;
+
+  async function refreshAll() {
+    if (refreshInFlight) {
+      refreshQueued = true;
+      return;
+    }
+
+    refreshInFlight = true;
+    try {
+      await loadAll();
+    } finally {
+      refreshInFlight = false;
+      if (refreshQueued) {
+        refreshQueued = false;
+        void refreshAll();
+      }
+    }
+  }
+
+  function stopLiveRefresh() {
+    for (const off of liveRefreshUnsubs) off();
+    liveRefreshUnsubs = [];
+    if (refreshTimer) {
+      clearInterval(refreshTimer);
+      refreshTimer = null;
+    }
+  }
+
+  function startLiveRefresh() {
+    const s = get(session);
+    if (s.token) {
+      appSocket.connect(s.token);
+    }
+
+    const trigger = () => {
+      void refreshAll();
+    };
+
+    liveRefreshUnsubs.push(appSocket.on('queue', trigger));
+    liveRefreshUnsubs.push(appSocket.on('bot-list', trigger));
+    liveRefreshUnsubs.push(appSocket.on('matched', trigger));
+    liveRefreshUnsubs.push(appSocket.on('fight-start', trigger));
+    liveRefreshUnsubs.push(appSocket.on('fight-end', trigger));
+
+    refreshTimer = setInterval(() => {
+      void refreshAll();
+    }, 5000);
+  }
 
   async function loadAll() {
     const [botsRes, queueRes, usersRes, settingsRes, fightsRes] = await Promise.all([
@@ -124,21 +178,33 @@
     goto('/admin/verify?next=/admin');
   }
 
-  onMount(async () => {
-    const existing = getAdminKey();
-    const verifyRes = await verifyAdminAccess(existing);
-    if (!verifyRes.ok) {
-      setAdminKey('');
-      gotoVerify();
-      return;
-    }
+  onMount(() => {
+    let mounted = true;
 
-    try {
-      await loadAll();
-    } catch {
-      setAdminKey('');
-      gotoVerify();
-    }
+    const boot = async () => {
+      const existing = getAdminKey();
+      const verifyRes = await verifyAdminAccess(existing);
+      if (!verifyRes.ok) {
+        setAdminKey('');
+        gotoVerify();
+        return;
+      }
+
+      try {
+        await refreshAll();
+        if (mounted) startLiveRefresh();
+      } catch {
+        setAdminKey('');
+        gotoVerify();
+      }
+    };
+
+    void boot();
+
+    return () => {
+      mounted = false;
+      stopLiveRefresh();
+    };
   });
 </script>
 

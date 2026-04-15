@@ -31,7 +31,8 @@
         body: offer.sdp
       });
       if (!answerRes.ok) throw new Error(`WHEP failed (${answerRes.status})`);
-
+      console.log('Received WHEP answer');
+      
       const answerSdp = await answerRes.text();
       await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp });
     } catch (err) {

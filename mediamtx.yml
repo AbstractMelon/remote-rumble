@@ -3,3 +3,5 @@ paths:
     source: publisher
     publishUser: ""
     publishPass: ""
+    readUser: ""
+    readPass: ""

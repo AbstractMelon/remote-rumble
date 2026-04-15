@@ -68,7 +68,17 @@ func (a *App) HandleQueueJoin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := a.Store.SQL.ExecContext(r.Context(), `INSERT INTO queue(user_id, joined_at) VALUES(?, unixepoch())`, user.ID)
+	inOpenFight, err := isUserInOpenFight(r.Context(), a.Store.SQL, user.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to validate current fight state")
+		return
+	}
+	if inOpenFight {
+		writeError(w, http.StatusConflict, "cannot join queue while in an active match")
+		return
+	}
+
+	_, err = a.Store.SQL.ExecContext(r.Context(), `INSERT INTO queue(user_id, joined_at) VALUES(?, unixepoch())`, user.ID)
 	if err != nil {
 		if db.IsUniqueViolation(err) {
 			// Idempotent join: if already queued (e.g. after page reload), return current queue state.
@@ -145,6 +155,27 @@ func queuePosition(entries []models.QueueEntry, userID int64) int {
 
 func isInQueue(ctx context.Context, dbx *sql.DB, userID int64) (bool, error) {
 	row := dbx.QueryRowContext(ctx, `SELECT 1 FROM queue WHERE user_id = ?`, userID)
+	var one int
+	err := row.Scan(&one)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func isUserInOpenFight(ctx context.Context, dbx *sql.DB, userID int64) (bool, error) {
+	row := dbx.QueryRowContext(ctx, `
+		SELECT 1
+		FROM fights
+		WHERE status IN ('pending', 'selecting', 'active')
+		  AND (player1_id = ? OR player2_id = ?)
+		ORDER BY id DESC
+		LIMIT 1
+	`, userID, userID)
+
 	var one int
 	err := row.Scan(&one)
 	if err == sql.ErrNoRows {

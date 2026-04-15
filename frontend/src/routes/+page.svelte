@@ -24,6 +24,7 @@
   let selectedSubmitted = false;
   let timerInterval: ReturnType<typeof setInterval> | null = null;
   let socketHandlersBound = false;
+  let socketUnsubs: Array<() => void> = [];
 
   onMount(() => {
     const boot = async () => {
@@ -38,8 +39,7 @@
       }
 
       if (s.user) {
-        fight.update((f) => ({ ...f, step: 'queue' }));
-        await safelyJoinQueue();
+        await restorePlayerFlow();
       }
     };
 
@@ -56,6 +56,9 @@
 
     return () => {
       if (timerInterval) clearInterval(timerInterval);
+      clearSocketHandlers();
+      socketHandlersBound = false;
+      appSocket.disconnect();
     };
   });
 
@@ -65,12 +68,12 @@
     if (socketHandlersBound) return;
     socketHandlersBound = true;
 
-    appSocket.on('queue', (evt) => {
+    socketUnsubs.push(appSocket.on('queue', (evt) => {
       const user = get(session).user;
       applyQueueEvent(evt, user?.username);
-    });
+    }));
 
-    appSocket.on('matched', (evt) => {
+    socketUnsubs.push(appSocket.on('matched', (evt) => {
       selectedBotId = '';
       selectedSubmitted = false;
       fight.update((f) => ({
@@ -79,15 +82,15 @@
         fightId: Number(evt.fightId),
         opponent: String(evt.opponent ?? '')
       }));
-    });
+    }));
 
-    appSocket.on('bot-list', (evt) => {
+    socketUnsubs.push(appSocket.on('bot-list', (evt) => {
       const bots = (evt.bots ?? []) as Array<{ id: string; name: string; online: boolean; enabled: boolean }>;
       fight.update((f) => ({ ...f, bots }));
       queue.update((q) => ({ ...q, availableBots: bots.filter((b) => b.online && b.enabled).length }));
-    });
+    }));
 
-    appSocket.on('fight-start', (evt) => {
+    socketUnsubs.push(appSocket.on('fight-start', (evt) => {
       selectedSubmitted = false;
       fight.update((f) => ({
         ...f,
@@ -98,22 +101,103 @@
         startedAtServer: Number(evt.serverTime ?? Math.floor(Date.now() / 1000)),
         timerRemainingSec: Number(evt.durationSec ?? 180)
       }));
-    });
+      queue.update((q) => ({ ...q, joined: false, position: 0, ahead: 0 }));
+    }));
 
-    appSocket.on('telemetry', (evt) => {
+    socketUnsubs.push(appSocket.on('telemetry', (evt) => {
       fight.update((f) => ({ ...f, telemetry: evt.data ?? {} }));
-    });
+    }));
 
-    appSocket.on('pong', (evt) => {
+    socketUnsubs.push(appSocket.on('pong', (evt) => {
       const sentAt = Number(evt.t ?? 0);
       if (!sentAt) return;
       fight.update((f) => ({ ...f, pingMs: Math.max(0, Date.now() - sentAt) }));
-    });
+    }));
 
-    appSocket.on('fight-end', async () => {
+    socketUnsubs.push(appSocket.on('fight-end', async () => {
       resetFlowAfterFight();
       await safelyJoinQueue();
-    });
+    }));
+  }
+
+  function clearSocketHandlers() {
+    for (const off of socketUnsubs) off();
+    socketUnsubs = [];
+  }
+
+  async function restorePlayerFlow() {
+    const s = get(session);
+    if (!s.user) return;
+
+    const [queueRes, fightsRes] = await Promise.all([apiFetch('/api/queue'), apiFetch('/api/fights')]);
+
+    if (queueRes.ok) {
+      const queueData = await queueRes.json();
+      applyQueueEvent(
+        {
+          positions: queueData.positions ?? [],
+          total: Number(queueData.total ?? 0)
+        },
+        s.user.username
+      );
+    }
+
+    if (!fightsRes.ok) {
+      fight.update((f) => ({ ...f, step: 'queue' }));
+      await safelyJoinQueue();
+      return;
+    }
+
+    const fightsPayload = await fightsRes.json();
+    const fights = (fightsPayload.fights ?? []) as Array<any>;
+    const openFight = fights.find((x) => x.status === 'active' || x.status === 'selecting' || x.status === 'pending');
+
+    if (openFight) {
+      const isP1 = Number(openFight.player1Id) === s.user.id;
+      const opponent = String(isP1 ? openFight.player2Name ?? '' : openFight.player1Name ?? '');
+
+      queue.update((q) => ({ ...q, joined: false, position: 0, ahead: 0 }));
+
+      if (openFight.status === 'active') {
+        const serverTime = Number(openFight.startedAt ?? Math.floor(Date.now() / 1000));
+        const duration = Number(settings.fight_duration_sec ?? '180') || 180;
+        const elapsed = Math.max(0, Math.floor(Date.now() / 1000) - serverTime);
+        const myBotId = String(isP1 ? openFight.bot1Id ?? '' : openFight.bot2Id ?? '');
+
+        selectedSubmitted = false;
+        fight.update((f) => ({
+          ...f,
+          step: 'fight',
+          fightId: Number(openFight.id),
+          opponent,
+          botId: myBotId,
+          telemetry: {},
+          startedAtServer: serverTime,
+          durationSec: duration,
+          timerRemainingSec: Math.max(0, duration - elapsed)
+        }));
+        return;
+      }
+
+      selectedBotId = isP1 ? String(openFight.bot1Id ?? '') : String(openFight.bot2Id ?? '');
+      selectedSubmitted = selectedBotId !== '';
+      fight.update((f) => ({
+        ...f,
+        step: 'selection',
+        fightId: Number(openFight.id),
+        opponent,
+        botId: '',
+        telemetry: {},
+        startedAtServer: 0,
+        timerRemainingSec: 0
+      }));
+      return;
+    }
+
+    fight.update((f) => ({ ...f, step: 'queue', fightId: null, opponent: '', botId: '' }));
+    if (!get(queue).joined) {
+      await safelyJoinQueue();
+    }
   }
 
   async function onControllerReady(event: CustomEvent<{ index: number }>) {
@@ -137,8 +221,7 @@
       }
       const s = get(session);
       if (s.token) connectSocket(s.token);
-      fight.update((f) => ({ ...f, step: 'queue' }));
-      await safelyJoinQueue();
+      await restorePlayerFlow();
     } catch (err) {
       authError = err instanceof Error ? err.message : 'Authentication failed';
     }

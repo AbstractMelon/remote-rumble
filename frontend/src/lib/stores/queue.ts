@@ -47,6 +47,6 @@ export function applyQueueEvent(event: { positions: Array<{ username: string; po
     total: event.total,
     position,
     ahead: position > 0 ? position - 1 : 0,
-    joined: position > 0 || q.joined
+    joined: position > 0
   }));
 }
