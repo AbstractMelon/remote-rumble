@@ -22,10 +22,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -50,5 +46,4 @@ backend/web/_app/
 data/
 remote-rumble
 .env
-FLOW.md
 tmp
