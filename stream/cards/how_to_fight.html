@@ -1,0 +1,429 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+  body {
+    margin: 5px;
+    padding: 0;
+    background: transparent;
+  }
+  
+  .rr-root {
+    width: 1280px;
+    height: 720px;
+    background: #0a1628;
+    font-family: 'Barlow', sans-serif;
+    color: #e8f4f0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    /* border-radius: 4px; */
+  }
+
+  .rr-root::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 20% 50%, rgba(0,180,140,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 80% 20%, rgba(0,150,220,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .accent-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #00c896 0%, #00a8e8 50%, #0070c0 100%);
+    flex-shrink: 0;
+  }
+
+  .main-area {
+    display: flex;
+    flex: 1;
+    padding: 22px 28px 18px;
+    gap: 32px;
+    min-height: 0;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    display: flex;
+    flex-direction: column;
+    width: 420px;
+    flex-shrink: 0;
+    gap: 10px;
+  }
+
+  .panel-header {
+    margin-bottom: 4px;
+  }
+
+  .tag-line {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #00c896;
+    margin-bottom: 3px;
+  }
+
+  .panel-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .panel-title span {
+    color: #00c896;
+  }
+
+  .url-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,200,150,0.12);
+    border: 1px solid rgba(0,200,150,0.35);
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #00e8b0;
+    letter-spacing: 0.03em;
+  }
+
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-left: 3px solid rgba(0,200,150,0.4);
+    border-radius: 0 8px 8px 0;
+    padding: 9px 12px;
+    transition: border-left-color 0.2s;
+  }
+
+  .step-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #00c896;
+    line-height: 1;
+    min-width: 22px;
+    padding-top: 1px;
+    text-align: center;
+    /* align-self: center; */
+  }
+
+  .step-content {
+    flex: 1;
+  }
+
+  .step-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #ffffff;
+    line-height: 1.1;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: #8ab8aa;
+    margin-top: 1px;
+    line-height: 1.3;
+  }
+
+  .step-icon {
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.9;
+    flex-shrink: 0;
+  }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .bots-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #00a8e8;
+  }
+
+  .bots-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .bot-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .bot-img-area {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .bot-img-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .bot-footer {
+    padding: 7px 10px;
+    background: rgba(0,0,0,0.35);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bot-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+  }
+
+  .bot-type-badge {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 4px;
+  }
+
+  .badge-vertical {
+    background: rgba(220,60,120,0.2);
+    border: 1px solid rgba(220,60,120,0.5);
+    color: #f080b0;
+  }
+
+  .badge-horizontal {
+    background: rgba(0,168,232,0.2);
+    border: 1px solid rgba(0,168,232,0.5);
+    color: #60d0ff;
+  }
+
+  .badge-drum {
+    background: rgba(255,160,0,0.2);
+    border: 1px solid rgba(255,160,0,0.5);
+    color: #ffc040;
+  }
+
+  .badge-lifter {
+    background: rgba(0,200,150,0.2);
+    border: 1px solid rgba(0,200,150,0.5);
+    color: #40e8b0;
+  }
+
+  /* FOOTER */
+  .footer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 28px;
+    background: rgba(0,0,0,0.25);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+
+  .footer-left {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #3a6a5a;
+  }
+
+  .footer-note {
+    font-size: 11px;
+    color: #3a5a6a;
+    font-style: italic;
+  }
+
+  .footer-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #1a5a4a;
+  }
+
+  .divider-v {
+    width: 1px;
+    background: rgba(255,255,255,0.08);
+    align-self: stretch;
+  }
+</style>
+
+<div class="rr-root">
+  <div class="accent-bar"></div>
+
+  <div class="main-area">
+
+    <!-- LEFT: Steps -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <div class="tag-line">Remote Rumble</div>
+
+        <div class="panel-title">How to <span>Fight</span></div>
+        <div class="url-badge">
+          URL: remote-rumble.abstractmelon.net
+        </div>
+      </div>
+
+      <div class="steps-list">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Visit the site</div>
+            <div class="step-desc">Go to remote-rumble.abstractmelon.net. The link pinned in chat</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Plug in a controller</div>
+            <div class="step-desc">Any controller works, Xbox, PS, or generic USB controller</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Join the queue</div>
+            <div class="step-desc">Wait for your turn to fight. The queue is shown on screen</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Pick your bot</div>
+            <div class="step-desc">Choose between the four different fighters</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Fight!</div>
+            <div class="step-desc">Control your bot live and destroy your opponent</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider-v"></div>
+
+    <!-- RIGHT: Bot Grid -->
+    <div class="right-panel">
+      <div class="bots-label">Available Fighters</div>
+
+      <div class="bots-grid">
+
+        <!-- Titan -->
+        <div class="bot-card">
+          <div class="bot-img-area">
+            <img src="./titan.png" alt="Titan Bot">
+          </div>
+          <div class="bot-footer">
+            <span class="bot-name">Titan</span>
+            <span class="bot-type-badge badge-vertical">Vertical Spinner</span>
+          </div>
+        </div>
+
+        <!-- Viper -->
+        <div class="bot-card">
+          <div class="bot-img-area">
+            <img src="./viper.png" alt="Viper Bot">
+          </div>
+          <div class="bot-footer">
+            <span class="bot-name">Viper</span>
+            <span class="bot-type-badge badge-horizontal">Horizontal</span>
+          </div>
+        </div>
+
+        <!-- Nova -->
+        <div class="bot-card">
+          <div class="bot-img-area">
+            <img src="./nova.png" alt="Nova Bot">
+          </div>
+          <div class="bot-footer">
+            <span class="bot-name">Nova</span>
+            <span class="bot-type-badge badge-drum">Drum Spinner</span>
+          </div>
+        </div>
+
+        <!-- Vector -->
+        <div class="bot-card">
+          <div class="bot-img-area">
+            <img src="./vector.png" alt="Vector Bot">
+          </div>
+          <div class="bot-footer">
+            <span class="bot-name">Vector</span>
+            <span class="bot-type-badge badge-lifter">Lifter</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-bar">
+    <div class="footer-brand">Remote Rumble</div>
+    <div class="footer-note">⚠ Robots will be harmed in the making of this stream</div>
+    <div class="footer-brand">A project by AbstractMelon</div>
+  </div>
+</div>
