@@ -5,7 +5,7 @@
   import FightView from '$lib/components/FightView.svelte';
   import QueueDisplay from '$lib/components/QueueDisplay.svelte';
   import { appSocket } from '$lib/ws';
-  import { fight, resetFlowAfterFight } from '$lib/stores/fight';
+  import { fight, resetFlowAfterFight, type ControlMode } from '$lib/stores/fight';
   import { queue, joinQueue, leaveQueue, applyQueueEvent } from '$lib/stores/queue';
   import { apiFetch, guest, loadMe, login, register, session, logout } from '$lib/stores/session';
 
@@ -200,11 +200,12 @@
     }
   }
 
-  async function onControllerReady(event: CustomEvent<{ index: number }>) {
+  async function onControllerReady(event: CustomEvent<{ index: number; controlMode: ControlMode }>) {
     fight.update((f) => ({
       ...f,
       controllerReady: true,
       gamepadIndex: event.detail.index,
+      controlMode: event.detail.controlMode,
       step: 'identity'
     }));
   }
@@ -261,11 +262,13 @@
   async function logoutNow() {
     appSocket.disconnect();
     await logout();
+    const current = get(fight);
     queue.set({ joined: false, position: 0, ahead: 0, total: 0, availableBots: 0, positions: [] });
     fight.set({
       step: 'identity',
       controllerReady: true,
-      gamepadIndex: get(fight).gamepadIndex,
+      gamepadIndex: current.gamepadIndex,
+      controlMode: current.controlMode,
       fightId: null,
       opponent: '',
       botId: '',
@@ -365,6 +368,7 @@
       telemetry={$fight.telemetry}
       pingMs={$fight.pingMs}
       timerRemainingSec={$fight.timerRemainingSec}
+      controlMode={$fight.controlMode}
     />
   {/if}
 </div>

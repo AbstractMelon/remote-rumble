@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 
 export type Step = 'controller' | 'identity' | 'queue' | 'selection' | 'fight';
+export type ControlMode = 'one-stick' | 'two-stick';
 
 export type TelemetryData = {
   wifiRssi?: number;
@@ -16,6 +17,7 @@ export type FightState = {
   step: Step;
   controllerReady: boolean;
   gamepadIndex: number | null;
+  controlMode: ControlMode;
   fightId: number | null;
   opponent: string;
   botId: string;
@@ -31,6 +33,7 @@ export const fight = writable<FightState>({
   step: 'controller',
   controllerReady: false,
   gamepadIndex: null,
+  controlMode: 'one-stick',
   fightId: null,
   opponent: '',
   botId: '',

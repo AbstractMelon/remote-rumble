@@ -10,7 +10,7 @@
 </script>
 
 <section class="panel rise">
-  <h2>Step 3: Queue</h2>
+  <h2>Queue</h2>
   <p class="muted">You are in queue. Watch the stream while waiting for a match.</p>
 
   <div class="chips">

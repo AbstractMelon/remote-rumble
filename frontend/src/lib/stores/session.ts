@@ -24,6 +24,16 @@ export const session = writable<SessionState>({
   loading: false
 });
 
+function normalizeUser(raw: any): SessionUser {
+  return {
+    id: Number(raw?.id ?? 0),
+    username: String(raw?.username ?? ''),
+    email: raw?.email ? String(raw.email) : undefined,
+    isGuest: Boolean(raw?.isGuest),
+    isAdmin: Boolean(raw?.isAdmin)
+  } as SessionUser;
+}
+
 export function getAdminKey() {
   if (!browser) return '';
   return localStorage.getItem(adminKeyStorageKey) ?? '';
@@ -83,7 +93,7 @@ async function runAuth(path: string, body: Record<string, string>) {
     if (!res.ok) throw new Error(data.error || 'Request failed');
 
     setToken(data.token);
-    session.set({ token: data.token, user: data.user, loading: false });
+    session.set({ token: data.token, user: normalizeUser(data.user), loading: false });
     return data;
   } finally {
     session.update((s) => ({ ...s, loading: false }));
@@ -108,7 +118,7 @@ export async function loadMe() {
   const res = await apiFetch('/api/auth/me');
   if (!res.ok) return;
   const data = await res.json();
-  session.update((s) => ({ ...s, user: data.user }));
+  session.update((s) => ({ ...s, user: normalizeUser(data.user) }));
 }
 
 export async function logout() {

@@ -1,14 +1,23 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import type { ControlMode } from '$lib/stores/fight';
 
-  const dispatch = createEventDispatcher<{ ready: { index: number } }>();
+  const controlModeStorageKey = 'rr_control_mode';
+  const dispatch = createEventDispatcher<{ ready: { index: number; controlMode: ControlMode } }>();
 
   let pads: Gamepad[] = [];
   let selectedIndex = -1;
+  let controlMode: ControlMode = 'one-stick';
   let leftX = 0;
   let leftY = 0;
+  let rightY = 0;
+  let rightX = 0;
   let startPressed = false;
   let raf = 0;
+
+  function normalizeControlMode(value: unknown): ControlMode {
+    return value === 'two-stick' ? 'two-stick' : 'one-stick';
+  }
 
   function refreshPads() {
     pads = (navigator.getGamepads?.() ?? []).filter(Boolean) as Gamepad[];
@@ -23,10 +32,13 @@
     if (pad) {
       leftX = Number(pad.axes[0] ?? 0);
       leftY = Number(pad.axes[1] ?? 0);
+      rightY = Number(pad.axes[3] ?? 0);
+      rightX = Number(pad.axes[2] ?? 0);
       startPressed = Boolean(pad.buttons[9]?.pressed);
     } else {
       leftX = 0;
       leftY = 0;
+      rightY = 0;
       startPressed = false;
     }
     raf = requestAnimationFrame(tick);
@@ -38,10 +50,16 @@
 
   function continueFlow() {
     if (selectedIndex < 0) return;
-    dispatch('ready', { index: selectedIndex });
+    dispatch('ready', { index: selectedIndex, controlMode });
+  }
+
+  function setControlMode(next: ControlMode) {
+    controlMode = next;
+    localStorage.setItem(controlModeStorageKey, next);
   }
 
   onMount(() => {
+    controlMode = normalizeControlMode(localStorage.getItem(controlModeStorageKey));
     window.addEventListener('gamepadconnected', refreshPads);
     window.addEventListener('gamepaddisconnected', refreshPads);
     refreshPads();
@@ -56,7 +74,7 @@
 </script>
 
 <section class="panel rise">
-  <h2>Step 1: Controller setup</h2>
+  <h2>Controller setup</h2>
   <p class="muted">Connect a controller, choose it below, and confirm the live values respond.</p>
 
   <div class="grid two">
@@ -79,31 +97,59 @@
       {#if selectedIndex < 0}
         <p class="muted">Waiting on gamepad selection.</p>
       {:else}
+        <div class="mode-switch" role="group" aria-label="Control mode">
+          <button class:active={controlMode === 'one-stick'} type="button" on:click={() => setControlMode('one-stick')}>
+            One stick
+          </button>
+          <button class:active={controlMode === 'two-stick'} type="button" on:click={() => setControlMode('two-stick')}>
+            Two stick (tank)
+          </button>
+        </div>
         <ul>
-          <li>Left stick Y: throttle (forward/reverse)</li>
-          <li>Left stick X: steering (left/right)</li>
+          {#if controlMode === 'two-stick'}
+            <li>Left stick Y: left track/side</li>
+            <li>Right stick Y: right track/side</li>
+          {:else}
+            <li>Left stick Y: throttle (forward/reverse)</li>
+            <li>Left stick X: steering (left/right)</li>
+          {/if}
           <li>Start button: ESC arm/disarm</li>
         </ul>
+
         <div class="controller-shell">
-          <div class="stick-zone">
-            <div class="stick-ring" aria-label="left stick visualizer">
-              <div class="crosshair x"></div>
-              <div class="crosshair y"></div>
-              <div class="stick-thumb" style={`transform: translate(${(leftX * 60).toFixed(1)}px, ${(leftY * 60).toFixed(1)}px);`}></div>
+          <div class="stick-columns">
+            <div class="stick-zone">
+              <div class="stick-label">Left stick</div>
+              <div class="stick-ring" aria-label="left stick visualizer">
+                <div class="crosshair x"></div>
+                <div class="crosshair y"></div>
+                <div class="stick-thumb" style={`transform: translate(${(leftX * 60).toFixed(1)}px, ${(leftY * 60).toFixed(1)}px);`}></div>
+              </div>
             </div>
-            <div class="axis-readout">
-              <span>Steering: {((leftX * 100).toFixed())}%</span>
-              <span>Throttle: {((leftY * -100).toFixed())}%</span>
-            </div>
+
+            {#if controlMode === 'two-stick'}
+              <div class="stick-zone">
+                <div class="stick-label">Right stick</div>
+                <div class="stick-ring" aria-label="right stick visualizer">
+                  <div class="crosshair x"></div>
+                  <div class="crosshair y"></div>
+                  <div class="stick-thumb" style={`transform: translate(${(rightX * 60).toFixed(1)}px, ${(rightY * 60).toFixed(1)}px);`}></div>
+                </div>
+              </div>
+            {/if}
           </div>
 
-          <div class="center-controls">
-            <div class={startPressed ? 'start-button active' : 'start-button'}>
-              START
-            </div>
-            <p class="muted small">Press and hold START to verify ESC signal.</p>
+          <div class="axis-readout">
+            {#if controlMode === 'two-stick'}
+              <span>Left motor: {((leftY * -100).toFixed())}%</span>
+              <span>Right motor: {((rightY * -100).toFixed())}%</span>
+            {:else}
+              <span>Steering: {((leftX * 100).toFixed())}%</span>
+              <span>Throttle: {((leftY * -100).toFixed())}%</span>
+            {/if}
           </div>
         </div>
+
         <div class={startPressed ? 'chip ok' : 'chip warn'}>{startPressed ? 'START PRESSED' : 'START RELEASED'}</div>
       {/if}
     </div>
@@ -152,6 +198,19 @@
     border-color: var(--accent);
     background: #15383c;
   }
+  .mode-switch {
+    display: inline-flex;
+    gap: 0.4rem;
+    margin-bottom: 0.7rem;
+  }
+  .mode-switch button {
+    width: auto;
+    margin: 0;
+    padding: 0.35rem 0.7rem;
+  }
+  .mode-switch button.active {
+    border-color: var(--accent);
+  }
   .controller-shell {
     margin-bottom: 0.8rem;
     border: 1px solid rgba(164, 231, 233, 0.25);
@@ -160,12 +219,24 @@
     padding: 1rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-evenly;
     gap: 1.2rem;
+  }
+  .stick-columns {
+    display: flex;
+    gap: 0.8rem;
+    align-items: flex-start;
   }
   .stick-zone {
     display: grid;
     gap: 0.55rem;
+  }
+  .stick-label {
+    font-size: 0.78rem;
+    color: #bddbdd;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
   }
   .stick-ring {
     position: relative;
@@ -175,7 +246,6 @@
     border: 2px solid rgba(167, 226, 232, 0.4);
     background: radial-gradient(circle, rgba(30, 78, 85, 0.5), rgba(7, 28, 30, 0.94));
     box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.45);
-    /* overflow: hidden;  */ /* Could not decide if I wanted the stick thumb to be able to go outside the ring or not, so I left it as is for now */
   }
   .crosshair {
     position: absolute;
@@ -211,34 +281,7 @@
     gap: 0.2rem;
     font-size: 0.88rem;
     color: #d6ebed;
-  }
-  .center-controls {
-    display: grid;
-    justify-items: center;
-    gap: 0.45rem;
-  }
-  .start-button {
-    width: 78px;
-    height: 78px;
-    border-radius: 999px;
-    border: 2px solid rgba(255, 214, 146, 0.5);
-    display: grid;
-    place-items: center;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    color: #ffdca3;
-    background: radial-gradient(circle, rgba(73, 62, 30, 0.55), rgba(18, 16, 9, 0.95));
-  }
-  .start-button.active {
-    border-color: rgba(89, 255, 172, 0.82);
-    color: #cffff0;
-    box-shadow: 0 0 24px rgba(36, 214, 139, 0.36);
-    background: radial-gradient(circle, rgba(21, 110, 73, 0.7), rgba(7, 31, 22, 0.96));
-  }
-  .small {
-    font-size: 0.8rem;
-    max-width: 168px;
-    text-align: center;
+    min-width: 129px;
   }
   .chip {
     display: inline-block;
@@ -268,6 +311,11 @@
     .controller-shell {
       flex-direction: column;
       align-items: center;
+    }
+    .stick-columns {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
     }
   }
 </style>

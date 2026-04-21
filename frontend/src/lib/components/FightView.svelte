@@ -3,6 +3,7 @@
   import TelemetryPanel from './TelemetryPanel.svelte';
   import VideoFeed from './VideoFeed.svelte';
   import { appSocket } from '$lib/ws';
+  import type { ControlMode } from '$lib/stores/fight';
 
   export let botId = '';
   export let gamepadIndex: number | null = null;
@@ -10,9 +11,16 @@
   export let telemetry = {};
   export let pingMs = 0;
   export let timerRemainingSec = 0;
+  export let controlMode: ControlMode = 'one-stick';
 
   let leftX = 0;
   let leftY = 0;
+  let rightX = 0;
+  let rightY = 0;
+  let leftMotor = 0;
+  let rightMotor = 0;
+  let throttle = 0;
+  let steering = 0;
   let startPressed = false;
   let raf = 0;
   let pingInterval: ReturnType<typeof setInterval> | null = null;
@@ -22,11 +30,29 @@
     if (pad) {
       leftX = Number(pad.axes[0] ?? 0);
       leftY = Number(pad.axes[1] ?? 0);
+      rightX = Number(pad.axes[2] ?? 0);
+      rightY = Number(pad.axes[3] ?? 0);
       startPressed = Boolean(pad.buttons[9]?.pressed);
+
+      if (controlMode === 'two-stick') {
+        leftMotor = -leftY;
+        rightMotor = -rightY;
+        throttle = (leftMotor + rightMotor) / 2;
+        steering = (leftMotor - rightMotor) / 2;
+      } else {
+        leftMotor = 0;
+        rightMotor = 0;
+        throttle = -leftY;
+        steering = leftX;
+      }
+
+      const virtualLeftX = steering;
+      const virtualLeftY = -throttle;
 
       appSocket.send({
         type: 'control',
-        axes: { leftX, leftY },
+        controlMode,
+        axes: { leftX: virtualLeftX, leftY: virtualLeftY, rightX, rightY },
         buttons: { start: startPressed },
         sentAt: Date.now()
       });
@@ -62,9 +88,16 @@
       <VideoFeed />
       <div class="control-readout panel">
         <h3>Controller input</h3>
-        <p>LeftX {leftX.toFixed(2)} | LeftY {leftY.toFixed(2)}</p>
-        <div class="meter"><div class="fill" style={`width:${Math.min(100, Math.abs(leftX) * 100)}%`}></div></div>
-        <div class="meter"><div class="fill" style={`width:${Math.min(100, Math.abs(leftY) * 100)}%`}></div></div>
+        {#if controlMode === 'two-stick'}
+          <p>Mode: Two stick tank</p>
+          <p>Left motor: {leftMotor.toFixed(2)} | Right motor: {rightMotor.toFixed(2)}</p>
+        {:else}
+          <p>Mode: One stick arcade</p>
+          <p>LeftX: {leftX.toFixed(2)} | LeftY: {leftY.toFixed(2)}</p>
+        {/if}
+        <p>Throttle: {throttle.toFixed(2)} | Steering: {steering.toFixed(2)}</p>
+        <div class="meter"><div class="fill" style={`width:${Math.min(100, Math.abs(throttle) * 100)}%`}></div></div>
+        <div class="meter"><div class="fill" style={`width:${Math.min(100, Math.abs(steering) * 100)}%`}></div></div>
         <span class={startPressed ? 'chip ok' : 'chip warn'}>{startPressed ? 'START PRESSED' : 'START RELEASED'}</span>
       </div>
     </div>
